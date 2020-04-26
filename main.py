@@ -10,6 +10,7 @@ import threading
 
 def show_webcam(mirror=False):
     cam = cv2.VideoCapture(0)
+    print("Press Escape to quit the webcam window")
     while True:
         ret_val, img = cam.read()
         if mirror: 
@@ -25,18 +26,20 @@ def show_webcam(mirror=False):
     cv2.destroyAllWindows()
 
 
+def show_3d_coordinate_system():
+    mpl.rcParams['legend.fontsize'] = 10
 
-mpl.rcParams['legend.fontsize'] = 10
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
+    z = [2,3]
+    x = [2,2]
+    y = [1,4]
+    ax.plot(x, y, z, label='A Leg (?)')
+    ax.legend()
+    plt.show()
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
-z = [2,3]
-x = [2,2]
-y = [1,4]
-ax.plot(x, y, z, label='A Leg (?)')
-ax.legend()
-
-webcamThread = threading.Thread(target=show_webcam);
-webcamThread.start();
-plt.show()
+if __name__ == '__main__':
+    webcamThread = threading.Thread(target=show_webcam)
+    webcamThread.start()
+    show_3d_coordinate_system()
