@@ -8,15 +8,19 @@ ESCAPE_KEY = 27
 def empty(x):
     pass
 
-def timeDiff(t,showFPS):
-    s = time.perf_counter() - t #difference time in seconds
-    fps = round(1/s)
-    if not showFPS:
-        return str(round(s*100)/100) + "ms"
-    return str(round(s*100)/100) + "ms, " + str(fps) + "fps"
 
-def drawCalcTime(img, t,name, line, showFPS=False):
-    cv2.putText(img, name + ": " +timeDiff(t,  showFPS),(10,20+20*line),cv2.FONT_HERSHEY_SIMPLEX,.6,(255,255,255),2)
+def timeDiff(t, showFPS):
+    s = time.perf_counter() - t  # difference time in seconds
+    fps = round(1 / s)
+    if not showFPS:
+        return str(round(s * 1000)) + "ms"
+    return str(round(s * 1000)) + "ms, " + str(fps) + "fps"
+
+
+def drawCalcTime(img, t, name, line, showFPS=False):
+    cv2.putText(img, name + ": " + timeDiff(t, showFPS), (10, 20 + 20 * line), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                (255, 255, 255), 2)
+
 
 def createUI():
     print("Starting UI...")
@@ -37,21 +41,19 @@ def createUI():
         # Read Webcam data
         time_part = time.perf_counter()
         _, webcam_image = cam.read()
-        webcam_image = cv2.flip(webcam_image, 1) #Mirror
-        drawCalcTime(webcam_image,time_part,"Webcam",1)
+        webcam_image = cv2.flip(webcam_image, 1)  # Mirror
+        drawCalcTime(webcam_image, time_part, "Webcam", 1)
         time_part = time.perf_counter()
 
-
-
         # Convert to RGB and analyse
-        webcam_image_rgb = webcam_image #cv2.cvtColor(webcam_image, cv2.COLOR_BGR2RGB)
+        webcam_image_rgb = webcam_image  # cv2.cvtColor(webcam_image, cv2.COLOR_BGR2RGB)
         # TODO analyse the webcam image
-        drawCalcTime(webcam_image,time_part,"Calc",2)
+        drawCalcTime(webcam_image, time_part, "Calc", 2)
 
         # TODO draw skeleton
-        cv2.circle(webcam_image, center=(320,240), radius=50, color=(255, 0, 255), thickness=1)
+        cv2.circle(webcam_image, center=(320, 240), radius=50, color=(255, 0, 255), thickness=1)
 
-        drawCalcTime(webcam_image,time_all,"All", 3,True)
+        drawCalcTime(webcam_image, time_all, "All", 3, True)
         time_all = time.perf_counter()
         # Draw to screen
         cv2.imshow('3D Human Pose Estimation', webcam_image)
