@@ -9,11 +9,11 @@ def empty(x):
     pass
 
 def timeDiff(t,showFPS):
-    ms = time.perf_counter() - t
-    fps = round(1000/ms)
+    s = time.perf_counter() - t #difference time in seconds
+    fps = round(1/s)
     if not showFPS:
-        return str(round(ms)) + "ms"
-    return str(round(ms)) + "ms, " + str(fps) + "fps"
+        return str(round(s*100)/100) + "ms"
+    return str(round(s*100)/100) + "ms, " + str(fps) + "fps"
 
 def drawCalcTime(img, t,name, line, showFPS=False):
     cv2.putText(img, name + ": " +timeDiff(t,  showFPS),(10,20+20*line),cv2.FONT_HERSHEY_SIMPLEX,.6,(255,255,255),2)
