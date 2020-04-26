@@ -8,21 +8,24 @@ import matplotlib.pyplot as plt
 import cv2
 import threading
 
-def show_webcam(mirror=False):
-    cam = cv2.VideoCapture(0)
-    print("Press Escape to quit the webcam window")
-    while True:
-        ret_val, img = cam.read()
-        if mirror: 
-            img = cv2.flip(img, 1)
+ESCAPE_KEY = 27
 
-        cv2.imshow('Camera Data', img)
-        # Funktioniert noch nicht
-        cv2.circle(img, center=(50, 50), radius=50, color=(255, 0, 255), thickness=5)
-        # cv2.line(img=img, pt1=(10, 10), pt2=(300, 10), color=(255, 0, 0), thickness=50)
+def show_webcam(mirror=False):
+    cam = cv2.VideoCapture(0)  # Opens the default camera
+    print("Press Escape to quit the webcam window")
+
+    while True:
+        _, image = cam.read()  # fetch next frame
+        if mirror: 
+            image = cv2.flip(image, 1)
+
+        cv2.circle(image, center=(50, 50), radius=50, color=(255, 0, 255), thickness=3)
+
+        cv2.imshow('Webcam Stream', image)
         
-        if cv2.waitKey(1) == 27: 
+        if cv2.waitKey(1) == ESCAPE_KEY: 
             break  # esc to quit
+        
     cv2.destroyAllWindows()
 
 
