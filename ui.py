@@ -5,11 +5,11 @@ import numpy as np
 import time
 import _datetime as datetime
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
+import analyze
 
 ESCAPE_KEY = 27
 WINDOW_TITLE = '3D Human Pose Estimation'
+MODEL_FOLDER = 'models/'
 MODEL_COUNT = 0
 MODELS = []
 
@@ -37,7 +37,7 @@ def getModels():
         return MODELS
 
     files = []
-    for file in os.listdir('models'):
+    for file in os.listdir(MODEL_FOLDER):
         if file.endswith('.pth'):
             files.append(file)
 
@@ -57,6 +57,8 @@ def createUI():
 
     MODEL_COUNT = len(getModels())
     print("Found " + str(MODEL_COUNT) + " models to use")
+    print("Loading model " + getModels()[usedModel])
+    analyze.loadModel(MODEL_FOLDER + getModels()[usedModel])
 
     # Create window and UI
     cv2.namedWindow(WINDOW_TITLE)
@@ -84,8 +86,8 @@ def createUI():
         # TODO draw skeleton
         cv2.circle(webcam_image, center=(320, 240), radius=50, color=(255, 0, 255), thickness=1)
 
-        cv2.putText(webcam_image,"Model: " + getModels()[usedModel], (10,20), cv2.FONT_HERSHEY_SIMPLEX, .6,
-                    (192,192,192), 2)
+        cv2.putText(webcam_image, "Model: " + getModels()[usedModel], (10, 20), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                    (192, 192, 192), 2)
 
         drawCalcTime(webcam_image, time_all, "All", 3, True)
         time_all = time.perf_counter()
