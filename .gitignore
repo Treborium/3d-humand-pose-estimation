@@ -135,3 +135,4 @@ settings.json
 # End of https://www.gitignore.io/api/venv,python,visualstudiocode
 /.idea/
 /models/
+/output/

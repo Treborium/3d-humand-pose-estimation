@@ -1,8 +1,12 @@
+import os
+
 import cv2
 import numpy as np
 import time
+import _datetime as datetime
 
 ESCAPE_KEY = 27
+WINDOW_TITLE = '3D Human Pose Estimation'
 
 
 def empty(x):
@@ -28,8 +32,9 @@ def createUI():
     webcam_image_rgb = np.zeros((200, 150, 3), np.uint8)  # BGR -> RGB for pytorch
 
     # Create window and UI
-    cv2.namedWindow('3D Human Pose Estimation')
-    cv2.createTrackbar('Model', '3D Human Pose Estimation', 0, 6, empty)
+    cv2.namedWindow(WINDOW_TITLE)
+    cv2.createTrackbar('Model', WINDOW_TITLE, 0, 6, empty)
+    cv2.createTrackbar('Screenshot', WINDOW_TITLE, 0, 1, empty);
 
     print("Connecting to Webcam")
     cam = cv2.VideoCapture(0)  # Opens the default camera
@@ -56,7 +61,21 @@ def createUI():
         drawCalcTime(webcam_image, time_all, "All", 3, True)
         time_all = time.perf_counter()
         # Draw to screen
-        cv2.imshow('3D Human Pose Estimation', webcam_image)
+        cv2.imshow(WINDOW_TITLE, webcam_image)
+
+        # Events
+        model = cv2.getTrackbarPos('Model', WINDOW_TITLE)
+
+        # Screenshot event
+        # FIXME This event gets called twice but the position is reset inside the block
+        if cv2.getTrackbarPos('Screenshot', WINDOW_TITLE) == 1:
+            if not os.path.exists('output'):    # Create folder
+                os.makedirs('output')
+            dt = datetime.datetime.today().strftime('%Y%m%d-%H.%M.%S')
+            cv2.imwrite('output/img_' + dt + '.png', webcam_image)  # Save to folder
+            cv2.setTrackbarPos('Screenshot', WINDOW_TITLE, 0)   # Reset Trackbar
+            print("Screenshot saved")
+            time.sleep(1)   # User can preview the saved frame
 
         # Exit
         if cv2.waitKey(1) == ESCAPE_KEY:
