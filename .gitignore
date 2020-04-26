@@ -133,3 +133,5 @@ settings.json
 .history
 
 # End of https://www.gitignore.io/api/venv,python,visualstudiocode
+/.idea/
+/models/

@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import cv2
 import threading
 
+import ui
+
 ESCAPE_KEY = 27
 
 def show_webcam(mirror=False):
@@ -43,6 +45,6 @@ def show_3d_coordinate_system():
     plt.show()
 
 if __name__ == '__main__':
-    webcamThread = threading.Thread(target=show_webcam)
+    webcamThread = threading.Thread(target=ui.createUI)
     webcamThread.start()
     show_3d_coordinate_system()
