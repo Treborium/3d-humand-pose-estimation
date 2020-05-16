@@ -71,7 +71,7 @@ def createUI():
     cv2.createTrackbar('Model', WINDOW_TITLE, 0, MODEL_COUNT - 1, empty)
     cv2.createTrackbar('Screenshot', WINDOW_TITLE, 0, 1, empty)
 
-    print("Connecting to Webcam")
+    print("Connecting to Webcam (this may take a few seconds...)")
     cam = cv2.VideoCapture(0)  # Opens the default camera
 
     print("Running")
