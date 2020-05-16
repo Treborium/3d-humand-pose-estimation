@@ -1,11 +1,12 @@
 import os
 
+
 import cv2
 import numpy as np
 import time
 import _datetime as datetime
 
-import analyze
+import dataloader
 
 ESCAPE_KEY = 27
 WINDOW_TITLE = '3D Human Pose Estimation'
@@ -42,6 +43,12 @@ def getModels():
             files.append(file)
 
     MODELS = files
+
+    if len(MODELS) == 0:
+        print("Error: No models in folder ./models or folder does not exist")
+        print("Please download the models with 'sh downloadModels.sh'")
+        raise Exception("No models found :(")
+
     return MODELS
 
 
@@ -51,14 +58,13 @@ def createUI():
     time_part = time.perf_counter()
     time_all = time.perf_counter()
 
-    print("Starting UI...")
+    print("Starting UI... Press 'Esc' to exit UI")
     webcam_image = np.zeros((200, 150, 3), np.uint8)
     webcam_image_rgb = np.zeros((200, 150, 3), np.uint8)  # BGR -> RGB for pytorch
 
     MODEL_COUNT = len(getModels())
     print("Found " + str(MODEL_COUNT) + " models to use")
-    print("Loading model " + getModels()[usedModel])
-    analyze.loadModel(MODEL_FOLDER + getModels()[usedModel])
+    dataloader.loadModel(MODEL_FOLDER + getModels()[usedModel])
 
     # Create window and UI
     cv2.namedWindow(WINDOW_TITLE)
@@ -99,10 +105,8 @@ def createUI():
         # Model Change Event
         model = cv2.getTrackbarPos('Model', WINDOW_TITLE)
         if not usedModel == model:
-            print("Switching from model " + str(usedModel) + " to " + str(model))
-            file = getModels()[model]
-            print("Loading file " + file)
-            # TODO switch to another model
+            file = MODEL_FOLDER + getModels()[model]
+            dataloader.loadModel(file)
             usedModel = model
 
         # Screenshot event

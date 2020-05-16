@@ -134,5 +134,8 @@ settings.json
 
 # End of https://www.gitignore.io/api/venv,python,visualstudiocode
 /.idea/
+/.idea/
 /models/
 /output/
+
+3d-humand-pose-estimation.iml
