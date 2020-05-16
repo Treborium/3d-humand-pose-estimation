@@ -71,6 +71,8 @@ def createUI():
     # Create window and UI
     cv2.namedWindow(WINDOW_TITLE)
     cv2.createTrackbar('Model', WINDOW_TITLE, 0, MODEL_COUNT - 1, empty)
+    cv2.createTrackbar('Height', WINDOW_TITLE, 256, 512, empty)
+    cv2.createTrackbar('FX', WINDOW_TITLE, 0, 50, empty)
     cv2.createTrackbar('Screenshot', WINDOW_TITLE, 0, 1, empty)
 
     print("Connecting to Webcam (this may take a few seconds...)")
@@ -88,7 +90,9 @@ def createUI():
 
         # Convert to RGB and analyse
         # TODO analyse the webcam image
-        dataloader.analyse(webcam_image)
+        height = cv2.getTrackbarPos('Height', WINDOW_TITLE);
+        fx = cv2.getTrackbarPos('FX', WINDOW_TITLE)
+        dataloader.analyse(webcam_image, height, fx)
 
         drawCalcTime(webcam_image, time_part, "Calc", 2)
 
