@@ -19,7 +19,8 @@ def empty(x):
     pass
 
 
-def timeDiff(t, showFPS):
+# Returns the difference to time s and maybe shows the FPS
+def timeDiff(t, showFPS = False):
     s = time.perf_counter() - t  # difference time in seconds
     fps = round(1 / s)
     if not showFPS:
@@ -27,6 +28,7 @@ def timeDiff(t, showFPS):
     return str(round(s * 1000)) + "ms, " + str(fps) + "fps"
 
 
+# Draws the time difference to t into img with the given name
 def drawCalcTime(img, t, name, line, showFPS=False):
     cv2.putText(img, name + ": " + timeDiff(t, showFPS), (10, 20 + 20 * line), cv2.FONT_HERSHEY_SIMPLEX, .6,
                 (255, 255, 255), 2)
@@ -58,7 +60,7 @@ def createUI():
     time_part = time.perf_counter()
     time_all = time.perf_counter()
 
-    print("Starting UI... Press 'Esc' to exit UI")
+    print("Starting UI... Press 'Esc' to exit")
     webcam_image = np.zeros((200, 150, 3), np.uint8)
     webcam_image_rgb = np.zeros((200, 150, 3), np.uint8)  # BGR -> RGB for pytorch
 
@@ -85,9 +87,8 @@ def createUI():
         time_part = time.perf_counter()
 
         # Convert to RGB and analyse
-        webcam_image_rgb = webcam_image  # cv2.cvtColor(webcam_image, cv2.COLOR_BGR2RGB)
         # TODO analyse the webcam image
-        dataloader.analyse(webcam_image_rgb)
+        dataloader.analyse(webcam_image)
 
         drawCalcTime(webcam_image, time_part, "Calc", 2)
 
