@@ -1,5 +1,5 @@
+import colorsys
 import os
-
 
 import cv2
 import numpy as np
@@ -14,13 +14,23 @@ MODEL_FOLDER = 'models/'
 MODEL_COUNT = 0
 MODELS = []
 
+# BODY EDGES FROM LHPE3D DEMO
+body_edges = np.array(
+    [[0, 1],  # neck - nose
+     [1, 16], [16, 18],  # nose - l_eye - l_ear
+     [1, 15], [15, 17],  # nose - r_eye - r_ear
+     [0, 3], [3, 4], [4, 5],  # neck - l_shoulder - l_elbow - l_wrist
+     [0, 9], [9, 10], [10, 11],  # neck - r_shoulder - r_elbow - r_wrist
+     [0, 6], [6, 7], [7, 8],  # neck - l_hip - l_knee - l_ankle
+     [0, 12], [12, 13], [13, 14]])  # neck - r_hip - r_knee - r_ankle
+
 
 def empty(x):
     pass
 
 
 # Returns the difference to time s and maybe shows the FPS
-def timeDiff(t, showFPS = False):
+def timeDiff(t, showFPS=False):
     s = time.perf_counter() - t  # difference time in seconds
     fps = round(1 / s)
     if not showFPS:
@@ -85,24 +95,51 @@ def createUI():
         time_part = time.perf_counter()
         _, webcam_image = cam.read()
         webcam_image = cv2.flip(webcam_image, 1)  # Mirror
-        drawCalcTime(webcam_image, time_part, "Webcam", 1)
+        drawCalcTime(webcam_image, time_part, "WEBCAM", 1)
         time_part = time.perf_counter()
 
-        # Convert to RGB and analyse
-        # TODO analyse the webcam image
-        height = cv2.getTrackbarPos('Height', WINDOW_TITLE);
+        # Read variables
+        height = cv2.getTrackbarPos('Height', WINDOW_TITLE)
+        if height < 16:
+            height = 16
+            cv2.setTrackbarPos('Height', WINDOW_TITLE, 16)
         fx = cv2.getTrackbarPos('FX', WINDOW_TITLE)
-        dataloader.analyse(webcam_image, height, fx)
+        if fx == 0:
+            fx = -1
 
-        drawCalcTime(webcam_image, time_part, "Calc", 2)
+        # Prepare Image
+        image, input_scale, fx = dataloader.prepareImage(webcam_image, height, fx)
+        drawCalcTime(webcam_image, time_part, "CV2", 2)
+        time_part = time.perf_counter()
 
-        # TODO draw skeleton
-        cv2.circle(webcam_image, center=(320, 240), radius=50, color=(255, 0, 255), thickness=1)
+        # Get Poses
+        pose_3d, pose_2d = dataloader.calcPoses(image, input_scale, fx)
+        drawCalcTime(webcam_image, time_part, "POSE", 3)
+        time_part = time.perf_counter()
+
+        # Draw Poses
+        for pid in range(len(pose_2d)):
+            # all array elements
+            # into ?x3 array
+            # reverse dimensions
+            pose = np.array(pose_2d[pid][0:-1]) \
+                .reshape((-1, 3)) \
+                .transpose()
+            has_pose = pose[2, :] > 0
+            for eid in range(len(body_edges)):  # Go through all defined edges
+                edge = body_edges[eid]
+                if has_pose[edge[0]] and has_pose[edge[1]]:  # If we have both "points" -> Draw line
+                    color = colorsys.hsv_to_rgb(eid / 17.0, 1, 1) # Use HSL color space to use different colors
+                    color = [e * 256 for e in color] # convert [0,1] to [0,256] for ocv
+                    cv2.line(webcam_image, tuple(pose[0:2, edge[0]].astype(int)), tuple(pose[0:2, edge[1]].astype(int)),
+                             color, 4, cv2.LINE_AA)
 
         cv2.putText(webcam_image, "Model: " + getModels()[usedModel], (10, 20), cv2.FONT_HERSHEY_SIMPLEX, .6,
                     (192, 192, 192), 2)
 
-        drawCalcTime(webcam_image, time_all, "All", 3, True)
+        drawCalcTime(webcam_image, time_part, "DRAW", 4)
+        time_part = time.perf_counter()
+        drawCalcTime(webcam_image, time_all, "All", 5, True)
         time_all = time.perf_counter()
 
         # Draw to screen

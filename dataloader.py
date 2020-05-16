@@ -34,20 +34,21 @@ def loadModel(model):
     net = InferenceEnginePyTorch(model, "GPU" if cuda_active else "CPU")
 
 
-
-## Analyse the webcam image
-def analyse(webcam_image,height,fx):
-    stride = 8
+def prepareImage(webcam_image, height, fx):
     input_scale = height / webcam_image.shape[0]
     if fx < 0:  # Focal length is unknown
         fx = np.float32(0.8 * webcam_image.shape[1])
     image = cv2.cvtColor(webcam_image, cv2.COLOR_BGR2RGB)  # Set TO RGB
     image = cv2.resize(image, dsize=None, fx=input_scale, fy=input_scale)      # Resize
+    return image,input_scale, fx
 
+## Analyse the webcam image
+def calcPoses(image,input_scale, fx):
+    stride = 8
     inference_result = net.infer(image)
     poses_3d, poses_2d = parse_poses(inference_result, input_scale, stride, fx, True)
 
-    print(str(poses_2d))
+    return poses_3d, poses_2d
 
 
 
