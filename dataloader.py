@@ -38,7 +38,5 @@ def analyse(webcam_image):
         transforms.ToTensor(),
         norm_transform
     ])
-
-#TODO Load dataset and create dataloader
-
+    #TODO Load dataset and create dataloader
     pass  # TODO Implement

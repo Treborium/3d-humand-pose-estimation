@@ -87,6 +87,8 @@ def createUI():
         # Convert to RGB and analyse
         webcam_image_rgb = webcam_image  # cv2.cvtColor(webcam_image, cv2.COLOR_BGR2RGB)
         # TODO analyse the webcam image
+        dataloader.analyse(webcam_image_rgb)
+
         drawCalcTime(webcam_image, time_part, "Calc", 2)
 
         # TODO draw skeleton
