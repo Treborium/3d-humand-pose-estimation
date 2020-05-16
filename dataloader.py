@@ -4,7 +4,7 @@ import re
 import PIL
 import torch
 import torchvision.transforms as transforms
-
+from torch.utils.data import DataLoader
 
 ## Load a model with the given nam
 ## This method is called from the ui (1) on startup and (2) when a user selects a different model
@@ -29,7 +29,7 @@ def loadModel(model):
         print("Starting CUDA device")
 
     device = torch.device("cuda:0" if cuda_active else "cpu")  # Use CUDA on nVIDIA GPUs, else CPU
-
+    print()
 
 ## Analyse the webcam image
 def analyse(webcam_image):
@@ -44,4 +44,16 @@ def analyse(webcam_image):
         norm_transform
     ])
     # TODO Load dataset and create dataloader
-    pass  # TODO Implement
+
+    dataset = WebcamDataset(pil_image, 0)
+
+    loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4)
+
+
+class WebcamDataset(torch.utils.data.Dataset):
+    def __init__(self, pil_image, images_class: int, regex="*.png"):
+        self.pil_image = pil_image
+        self.images_class: int = images_class
+
+    def __getitem__(self, index):
+        return self.pil_image, self.images_class
