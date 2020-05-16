@@ -1,19 +1,41 @@
 # 3D Human Pose Estimation
 
+This project is based on the following [repository](https://github.com/Daniil-Osokin/lightweight-human-pose-estimation-3d-demo.pytorch).
+
+## Requirements
+
+- Python >=3.5
+- CMake >=3.1
+- C++ Compiler
+- OpenCV >=4.0
+
 ## Setup
 
-- Create a virtual environment and activate it
+1. Create a virtual environment and activate it
 
 ```
 python -m venv venv
 source venv/bin/activate
 ```
 
-- Make sure to install the required python packages 
+2. Make sure to install the required python packages 
 
 ```
 pip install -r requirements.txt
 ```
+
+3. Build the `pose_extractor` module
+
+```
+python setup.py build_ext
+```
+
+4. Add build folder to the `PYTHONPATH`
+
+```
+export PYTHONPATH=pose_extractor/build/:$PYTHONPATH
+```
+
 
 ## Usage
 
