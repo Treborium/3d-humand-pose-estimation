@@ -15,4 +15,4 @@ Pillow~=7.1.2
 
 importlib~=1.0.4
 wheel~=0.34.2
-torchvision~=0.6.0+cu92
+torchvision~=0.6.0
