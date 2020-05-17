@@ -7,6 +7,7 @@ import numpy as np
 import time
 import _datetime as datetime
 
+import chart
 import dataloader
 
 from modules.input_reader import VideoReader
@@ -154,6 +155,9 @@ def createUI():
                     color = [e * 256 for e in color] # convert [0,1] to [0,256] for ocv
                     cv2.line(webcam_image, tuple(pose[0:2, edge[0]].astype(int)), tuple(pose[0:2, edge[1]].astype(int)),
                              color, 4, cv2.LINE_AA)
+
+        chart.updateData(pose_3d)
+
 
         cv2.putText(webcam_image, "Model: " + getModels()[usedModel], (10, 20), cv2.FONT_HERSHEY_SIMPLEX, .6,
                     (192, 192, 192), 2)
