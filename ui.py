@@ -1,5 +1,6 @@
 import colorsys
 import os
+import sys
 
 import cv2
 import numpy as np
@@ -7,6 +8,8 @@ import time
 import _datetime as datetime
 
 import dataloader
+
+from modules.input_reader import VideoReader
 
 ESCAPE_KEY = 27
 WINDOW_TITLE = '3D Human Pose Estimation'
@@ -80,20 +83,37 @@ def createUI():
 
     # Create window and UI
     cv2.namedWindow(WINDOW_TITLE)
-    cv2.createTrackbar('Model', WINDOW_TITLE, 0, MODEL_COUNT - 1, empty)
+    cv2.createTrackbar('Model', WINDOW_TITLE, 0, max(MODEL_COUNT - 1, 1), empty)
     cv2.createTrackbar('Height', WINDOW_TITLE, 256, 512, empty)
     cv2.createTrackbar('FX', WINDOW_TITLE, 0, 50, empty)
     cv2.createTrackbar('Screenshot', WINDOW_TITLE, 0, 1, empty)
 
-    print("Connecting to Webcam (this may take a few seconds...)")
-    cam = cv2.VideoCapture(0)  # Opens the default camera
+    is_using_video_file = False
+    if len(sys.argv) > 1:
+        video_reader = VideoReader(sys.argv[1])
+        is_using_video_file = True
+        video_iter = iter(video_reader)
+    else:
+        print("Connecting to Webcam (this may take a few seconds...)")
+        cam = cv2.VideoCapture(0)  # Opens the default camera
+
 
     print("Running")
 
     while True:
-        # Read Webcam data
+        # Get image data
         time_part = time.perf_counter()
-        _, webcam_image = cam.read()
+
+        if is_using_video_file:
+            try:
+                webcam_image = next(video_iter)
+            except StopIteration as e:
+                video_iter = iter(video_reader)
+                webcam_image = next(video_iter)
+        else:
+            _, webcam_image = cam.read()
+
+
         webcam_image = cv2.flip(webcam_image, 1)  # Mirror
         drawCalcTime(webcam_image, time_part, "WEBCAM", 1)
         time_part = time.perf_counter()

@@ -1,11 +1,6 @@
-import importlib
-import re
-
-import PIL
 import cv2
 import numpy as np
 import torch
-import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from modules.inference_engine_pytorch import InferenceEnginePyTorch
 from modules.parse_poses import parse_poses

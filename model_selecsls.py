@@ -17,11 +17,6 @@ This code is made available under CC BY 4.0 (https://creativecommons.org/license
 from __future__ import absolute_import
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import math
-import fractions
-
 
 def conv_bn(inp, oup, stride):
     return nn.Sequential(
