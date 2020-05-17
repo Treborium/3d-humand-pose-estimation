@@ -93,9 +93,10 @@ def createUI():
     if len(sys.argv) > 1:
         video_reader = VideoReader(sys.argv[1])
         is_using_video_file = True
-
-    print("Connecting to Webcam (this may take a few seconds...)")
-    cam = cv2.VideoCapture(0)  # Opens the default camera
+        video_iter = iter(video_reader)
+    else:
+        print("Connecting to Webcam (this may take a few seconds...)")
+        cam = cv2.VideoCapture(0)  # Opens the default camera
 
 
     print("Running")
@@ -105,7 +106,10 @@ def createUI():
         time_part = time.perf_counter()
 
         if is_using_video_file:
-            webcam_image = video_reader.next()
+            try:
+                webcam_image = next(video_iter)
+            except StopIteration as e:
+                break
         else:
             _, webcam_image = cam.read()
 
