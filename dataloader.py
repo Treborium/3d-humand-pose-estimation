@@ -19,9 +19,9 @@ def loadModel(model):
         print("Warning: Running on CPU")
     else:
         print("CUDA is available")
-    from torch2trt import TRTModule
 
     if model.endswith("_opt.pth"):
+        from torch2trt import TRTModule
         print("Loading optimized RTR model")
         net = TRTModule()
         net.load_state_dict(torch.load(model))
