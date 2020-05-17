@@ -18,13 +18,6 @@ def loadModel(model):
     global net
     print("Loading model " + model)
 
-    # Get the model type name selecSLS expects
-    model_typename_start = model.index("/") + 1
-    model_typename_end = model.index(".p")
-    model_type = "Selec" + model[model_typename_start:model_typename_end]
-    model_type = model_type.replace("_old", "")
-    print("Loading type '" + model_type + "'")
-
     cuda_active = torch.cuda.is_available
     if not cuda_active:
         print("Warning: Running on CPU")
