@@ -109,7 +109,8 @@ def createUI():
             try:
                 webcam_image = next(video_iter)
             except StopIteration as e:
-                break
+                video_iter = iter(video_reader)
+                webcam_image = next(video_iter)
         else:
             _, webcam_image = cam.read()
 
