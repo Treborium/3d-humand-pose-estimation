@@ -92,6 +92,7 @@ def createUI():
 
     is_using_video_file = False
     if len(sys.argv) > 1:
+        print("Using the provided video file:", sys.argv[1])
         video_reader = VideoReader(sys.argv[1])
         is_using_video_file = True
         video_iter = iter(video_reader)
