@@ -84,7 +84,7 @@ def createUI():
 
     # Create window and UI
     cv2.namedWindow(WINDOW_TITLE)
-    cv2.createTrackbar('Model', WINDOW_TITLE, 0, max(MODEL_COUNT - 1, 1), empty)
+    cv2.createTrackbar('Model', WINDOW_TITLE, usedModel, max(MODEL_COUNT - 1, 1), empty)
     cv2.createTrackbar('Height', WINDOW_TITLE, 256, 512, empty)
     cv2.createTrackbar('FX', WINDOW_TITLE, 0, 50, empty)
     cv2.createTrackbar('Screenshot', WINDOW_TITLE, 0, 1, empty)
