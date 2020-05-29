@@ -45,7 +45,7 @@ def timeDiff(t, showFPS=False):
 # Draws the time difference to t into img with the given name
 def drawCalcTime(img, t, name, line, showFPS=False):
     cv2.putText(img, name + ": " + timeDiff(t, showFPS), (10, 20 + 20 * line), cv2.FONT_HERSHEY_SIMPLEX, .6,
-                (255, 255, 255), 2)
+                (15, 196, 241), 2)
 
 
 def getModels():
@@ -88,16 +88,17 @@ def createUI():
     cv2.createTrackbar('Height', WINDOW_TITLE, 256, 512, empty)
     cv2.createTrackbar('FX', WINDOW_TITLE, 0, 50, empty)
     cv2.createTrackbar('Screenshot', WINDOW_TITLE, 0, 1, empty)
+    cv2.createTrackbar('Sync Draw', WINDOW_TITLE, 0, 1, empty)
 
     is_using_video_file = False
     if len(sys.argv) > 1:
+        print("Using the provided video file:", sys.argv[1])
         video_reader = VideoReader(sys.argv[1])
         is_using_video_file = True
         video_iter = iter(video_reader)
     else:
         print("Connecting to Webcam (this may take a few seconds...)")
         cam = cv2.VideoCapture(0)  # Opens the default camera
-
 
     print("Running")
 
@@ -113,7 +114,6 @@ def createUI():
                 webcam_image = next(video_iter)
         else:
             _, webcam_image = cam.read()
-
 
         webcam_image = cv2.flip(webcam_image, 1)  # Mirror
         drawCalcTime(webcam_image, time_part, "WEBCAM", 1)
@@ -150,13 +150,13 @@ def createUI():
             for eid in range(len(body_edges)):  # Go through all defined edges
                 edge = body_edges[eid]
                 if has_pose[edge[0]] and has_pose[edge[1]]:  # If we have both "points" -> Draw line
-                    color = colorsys.hsv_to_rgb(eid / 17.0, 1, 1) # Use HSL color space to use different colors
-                    color = [e * 256 for e in color] # convert [0,1] to [0,256] for ocv
+                    color = colorsys.hsv_to_rgb(eid / 17.0, 1, 1)  # Use HSL color space to use different colors
+                    color = [e * 256 for e in color]  # convert [0,1] to [0,256] for ocv
                     cv2.line(webcam_image, tuple(pose[0:2, edge[0]].astype(int)), tuple(pose[0:2, edge[1]].astype(int)),
                              color, 4, cv2.LINE_AA)
 
-        chart.updateData(pose_3d)
-
+        sync = cv2.getTrackbarPos('Sync Draw', WINDOW_TITLE)
+        chart.updateData(pose_3d,sync)
 
         cv2.putText(webcam_image, "Model: " + getModels()[usedModel], (10, 20), cv2.FONT_HERSHEY_SIMPLEX, .6,
                     (192, 192, 192), 2)
@@ -190,6 +190,7 @@ def createUI():
 
         # Exit
         if cv2.waitKey(1) == ESCAPE_KEY:
+            exit(0)
             break  # esc to quit
 
     cv2.destroyAllWindows()
