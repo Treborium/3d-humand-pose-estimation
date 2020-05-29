@@ -1,6 +1,7 @@
 import colorsys
 import os
 import sys
+from concurrent.futures.thread import ThreadPoolExecutor
 
 import cv2
 import numpy as np
@@ -27,6 +28,19 @@ body_edges = np.array(
      [0, 9], [9, 10], [10, 11],  # neck - r_shoulder - r_elbow - r_wrist
      [0, 6], [6, 7], [7, 8],  # neck - l_hip - l_knee - l_ankle
      [0, 12], [12, 13], [13, 14]])  # neck - r_hip - r_knee - r_ankle
+
+MAX_FRAMEBUFFER_SIZE = 16
+
+# Thread Pool
+executor = ThreadPoolExecutor(MAX_FRAMEBUFFER_SIZE)
+frame_buffer = []
+
+# ui variables
+cam = None
+is_using_video_file = None
+video_iter = None
+video_reader = None
+usedModel = 0
 
 
 def empty(x):
@@ -68,11 +82,86 @@ def getModels():
     return MODELS
 
 
+def calculateEverything():
+    global video_iter
+
+    time_all = time.perf_counter()
+    # Get image data
+    time_part = time.perf_counter()
+
+    if is_using_video_file:
+        try:
+            webcam_image = next(video_iter)
+        except StopIteration as e:
+            video_iter = iter(video_reader)
+            webcam_image = next(video_iter)
+    else:
+        _, webcam_image = cam.read()
+
+    webcam_image = cv2.flip(webcam_image, 1)  # Mirror
+    drawCalcTime(webcam_image, time_part, "WEBCAM", 1)
+    time_part = time.perf_counter()
+
+    # Read variables
+    height = cv2.getTrackbarPos('Height', WINDOW_TITLE)
+    if height < 16:
+        height = 16
+        cv2.setTrackbarPos('Height', WINDOW_TITLE, 16)
+    fx = cv2.getTrackbarPos('FX', WINDOW_TITLE)
+    if fx == 0:
+        fx = -1
+
+    # Prepare Image
+    image, input_scale, fx = dataloader.prepareImage(webcam_image, height, fx)
+    drawCalcTime(webcam_image, time_part, "CV2", 2)
+    time_part = time.perf_counter()
+
+    # Get Poses
+    pose_3d, pose_2d = dataloader.calcPoses(image, input_scale, fx)
+    drawCalcTime(webcam_image, time_part, "POSE", 3)
+    time_part = time.perf_counter()
+
+    # Draw Poses
+    for pid in range(len(pose_2d)):
+        # all array elements
+        # into ?x3 array
+        # reverse dimensions
+        pose = np.array(pose_2d[pid][0:-1]) \
+            .reshape((-1, 3)) \
+            .transpose()
+        has_pose = pose[2, :] > 0
+        for eid in range(len(body_edges)):  # Go through all defined edges
+            edge = body_edges[eid]
+            if has_pose[edge[0]] and has_pose[edge[1]]:  # If we have both "points" -> Draw line
+                color = colorsys.hsv_to_rgb(eid / 17.0, 1, 1)  # Use HSL color space to use different colors
+                color = [e * 256 for e in color]  # convert [0,1] to [0,256] for ocv
+                cv2.line(webcam_image, tuple(pose[0:2, edge[0]].astype(int)), tuple(pose[0:2, edge[1]].astype(int)),
+                         color, 4, cv2.LINE_AA)
+
+    sync = cv2.getTrackbarPos('Sync Draw', WINDOW_TITLE)
+    chart.updateData(pose_3d, sync)
+
+    cv2.putText(webcam_image, "Model: " + getModels()[usedModel], (10, 20), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                (192, 192, 192), 2)
+
+    drawCalcTime(webcam_image, time_part, "DRAW", 4)
+    time_part = time.perf_counter()
+    drawCalcTime(webcam_image, time_all, "All", 5, True)
+    time_all = time.perf_counter()
+
+    # Draw to screen
+
+    return webcam_image
+
+def buffer_frame():
+    frame_buffer.append(executor.submit(calculateEverything))
+
 def createUI():
     global MODEL_COUNT
-    usedModel = 0
-    time_part = time.perf_counter()
-    time_all = time.perf_counter()
+    global is_using_video_file, video_iter, video_reader, cam, usedModel
+    global frame_buffer
+    frame_buffer_size = 1
+    average_frametime = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     print("Starting UI... Press 'Esc' to exit")
     webcam_image = np.zeros((200, 150, 3), np.uint8)
@@ -89,6 +178,7 @@ def createUI():
     cv2.createTrackbar('FX', WINDOW_TITLE, 0, 50, empty)
     cv2.createTrackbar('Screenshot', WINDOW_TITLE, 0, 1, empty)
     cv2.createTrackbar('Sync Draw', WINDOW_TITLE, 0, 1, empty)
+    cv2.createTrackbar('Frame Buffer', WINDOW_TITLE, frame_buffer_size, MAX_FRAMEBUFFER_SIZE-1, empty)
 
     is_using_video_file = False
     if len(sys.argv) > 1:
@@ -101,74 +191,22 @@ def createUI():
         cam = cv2.VideoCapture(0)  # Opens the default camera
 
     print("Running")
+    buffer_frame()
 
+    time_all = time.perf_counter()
     while True:
-        # Get image data
-        time_part = time.perf_counter()
+        # Submit new frame
+        buffer_frame()
 
-        if is_using_video_file:
-            try:
-                webcam_image = next(video_iter)
-            except StopIteration as e:
-                video_iter = iter(video_reader)
-                webcam_image = next(video_iter)
-        else:
-            _, webcam_image = cam.read()
+        # Get oldest frame and remove from buffer
+        image = frame_buffer[0].result()
+        frame_buffer.pop(0)
 
-        webcam_image = cv2.flip(webcam_image, 1)  # Mirror
-        drawCalcTime(webcam_image, time_part, "WEBCAM", 1)
-        time_part = time.perf_counter()
+        # Calculate average frame time for buffered images to show
+        average_time = time.perf_counter() - sum(average_frametime) / len(average_frametime)
+        drawCalcTime(image, average_time, "Buffer avg", 6, True)
+        cv2.imshow(WINDOW_TITLE, image)
 
-        # Read variables
-        height = cv2.getTrackbarPos('Height', WINDOW_TITLE)
-        if height < 16:
-            height = 16
-            cv2.setTrackbarPos('Height', WINDOW_TITLE, 16)
-        fx = cv2.getTrackbarPos('FX', WINDOW_TITLE)
-        if fx == 0:
-            fx = -1
-
-        # Prepare Image
-        image, input_scale, fx = dataloader.prepareImage(webcam_image, height, fx)
-        drawCalcTime(webcam_image, time_part, "CV2", 2)
-        time_part = time.perf_counter()
-
-        # Get Poses
-        pose_3d, pose_2d = dataloader.calcPoses(image, input_scale, fx)
-        drawCalcTime(webcam_image, time_part, "POSE", 3)
-        time_part = time.perf_counter()
-
-        # Draw Poses
-        for pid in range(len(pose_2d)):
-            # all array elements
-            # into ?x3 array
-            # reverse dimensions
-            pose = np.array(pose_2d[pid][0:-1]) \
-                .reshape((-1, 3)) \
-                .transpose()
-            has_pose = pose[2, :] > 0
-            for eid in range(len(body_edges)):  # Go through all defined edges
-                edge = body_edges[eid]
-                if has_pose[edge[0]] and has_pose[edge[1]]:  # If we have both "points" -> Draw line
-                    color = colorsys.hsv_to_rgb(eid / 17.0, 1, 1)  # Use HSL color space to use different colors
-                    color = [e * 256 for e in color]  # convert [0,1] to [0,256] for ocv
-                    cv2.line(webcam_image, tuple(pose[0:2, edge[0]].astype(int)), tuple(pose[0:2, edge[1]].astype(int)),
-                             color, 4, cv2.LINE_AA)
-
-        sync = cv2.getTrackbarPos('Sync Draw', WINDOW_TITLE)
-        chart.updateData(pose_3d,sync)
-
-        cv2.putText(webcam_image, "Model: " + getModels()[usedModel], (10, 20), cv2.FONT_HERSHEY_SIMPLEX, .6,
-                    (192, 192, 192), 2)
-
-        drawCalcTime(webcam_image, time_part, "DRAW", 4)
-        time_part = time.perf_counter()
-        drawCalcTime(webcam_image, time_all, "All", 5, True)
-        time_all = time.perf_counter()
-
-        # Draw to screen
-
-        cv2.imshow(WINDOW_TITLE, webcam_image)
 
         # Model Change Event
         model = cv2.getTrackbarPos('Model', WINDOW_TITLE)
@@ -176,6 +214,23 @@ def createUI():
             file = MODEL_FOLDER + getModels()[model]
             dataloader.loadModel(file)
             usedModel = model
+
+
+        frame_buffer_new_size = cv2.getTrackbarPos('Frame Buffer', WINDOW_TITLE)
+
+        # Add more frames to a frame buffer
+        if frame_buffer_new_size > frame_buffer_size:
+            print("Set Frame buffer to " + str(frame_buffer_new_size))
+            for x in range(0, frame_buffer_new_size - frame_buffer_size):
+                buffer_frame()
+
+        # Removing the frames from list. TODO: Wait for the buffer to finish?
+        if frame_buffer_new_size < frame_buffer_size:
+            print("Shrink Frame buffer to " + str(frame_buffer_new_size))
+            for x in range(0, frame_buffer_size - frame_buffer_new_size):
+                frame_buffer.pop(0)
+        frame_buffer_size = frame_buffer_new_size
+
 
         # Screenshot event
         # FIXME This event gets called twice but the position is reset inside the block
@@ -188,6 +243,9 @@ def createUI():
             print("Screenshot saved")
             time.sleep(1)  # User can preview the saved frame
 
+        average_frametime.append(time.perf_counter() - time_all)
+        average_frametime.pop(0)
+        time_all = time.perf_counter()
         # Exit
         if cv2.waitKey(1) == ESCAPE_KEY:
             exit(0)
