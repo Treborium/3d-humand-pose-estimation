@@ -25,7 +25,7 @@ def createChart():
     z = [2, 3]
     x = [2, 2]
     y = [1, 4]
-    axis.plot(x, y, z, label='A Leg (?)')
+    axis.plot(x, y, z, label='Waiting for Input')
     axis.legend()
     plt.show()
 

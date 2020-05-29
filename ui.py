@@ -34,6 +34,7 @@ MAX_FRAMEBUFFER_SIZE = 16
 # Thread Pool
 executor = ThreadPoolExecutor(MAX_FRAMEBUFFER_SIZE)
 frame_buffer = []
+lastimage = None
 
 # ui variables
 cam = None
@@ -41,6 +42,7 @@ is_using_video_file = None
 video_iter = None
 video_reader = None
 usedModel = 0
+paused = False
 
 
 def empty(x):
@@ -83,12 +85,9 @@ def getModels():
 
 
 def calculateEverything(webcam_image):
-
     time_all = time.perf_counter()
     # Get image data
     time_part = time.perf_counter()
-
-
 
     webcam_image = cv2.flip(webcam_image, 1)  # Mirror
     drawCalcTime(webcam_image, time_part, "WEBCAM", 1)
@@ -145,21 +144,28 @@ def calculateEverything(webcam_image):
 
     return webcam_image
 
+
 def buffer_frame():
-    global video_iter
-    if is_using_video_file:
-        try:
-            webcam_image = next(video_iter)
-        except StopIteration as e:
-            video_iter = iter(video_reader)
-            webcam_image = next(video_iter)
+    global video_iter, lastimage, paused
+    if paused:
+        webcam_image=lastimage
     else:
-        _, webcam_image = cam.read()
-    frame_buffer.append(executor.submit(calculateEverything,(webcam_image)))
+        if is_using_video_file:
+            try:
+                webcam_image = next(video_iter)
+            except StopIteration as e:
+                video_iter = iter(video_reader)
+                webcam_image = next(video_iter)
+        else:
+            _, webcam_image = cam.read()
+
+    lastimage = webcam_image.copy()
+    frame_buffer.append(executor.submit(calculateEverything, webcam_image))
+
 
 def createUI():
     global MODEL_COUNT
-    global is_using_video_file, video_iter, video_reader, cam, usedModel
+    global is_using_video_file, video_iter, video_reader, cam, usedModel, paused
     global frame_buffer
     frame_buffer_size = 1
     average_frametime = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
@@ -179,7 +185,8 @@ def createUI():
     cv2.createTrackbar('FX', WINDOW_TITLE, 0, 50, empty)
     cv2.createTrackbar('Screenshot', WINDOW_TITLE, 0, 1, empty)
     cv2.createTrackbar('Sync Draw', WINDOW_TITLE, 0, 1, empty)
-    cv2.createTrackbar('Frame Buffer', WINDOW_TITLE, frame_buffer_size, MAX_FRAMEBUFFER_SIZE-1, empty)
+    cv2.createTrackbar('Frame Buffer', WINDOW_TITLE, frame_buffer_size, MAX_FRAMEBUFFER_SIZE - 1, empty)
+    cv2.createTrackbar('Pause', WINDOW_TITLE, 0, 1, empty)
 
     is_using_video_file = False
     if len(sys.argv) > 1:
@@ -208,14 +215,12 @@ def createUI():
         drawCalcTime(image, average_time, "Buffer avg", 6, True)
         cv2.imshow(WINDOW_TITLE, image)
 
-
         # Model Change Event
         model = cv2.getTrackbarPos('Model', WINDOW_TITLE)
         if not usedModel == model:
             file = MODEL_FOLDER + getModels()[model]
             dataloader.loadModel(file)
             usedModel = model
-
 
         frame_buffer_new_size = cv2.getTrackbarPos('Frame Buffer', WINDOW_TITLE)
 
@@ -232,7 +237,6 @@ def createUI():
                 frame_buffer.pop(0)
         frame_buffer_size = frame_buffer_new_size
 
-
         # Screenshot event
         # FIXME This event gets called twice but the position is reset inside the block
         if cv2.getTrackbarPos('Screenshot', WINDOW_TITLE) == 1:
@@ -247,6 +251,9 @@ def createUI():
         average_frametime.append(time.perf_counter() - time_all)
         average_frametime.pop(0)
         time_all = time.perf_counter()
+
+        paused = cv2.getTrackbarPos('Pause', WINDOW_TITLE) == 1
+
         # Exit
         if cv2.waitKey(1) == ESCAPE_KEY:
             exit(0)
