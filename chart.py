@@ -11,6 +11,8 @@ from data import R
 fig = None
 axis = None
 
+LOCK = threading.Lock()
+
 
 # Creates an chart
 def createChart():
@@ -70,11 +72,12 @@ def __updateData(pose_3d):
             axis.plot(x, y, z, label=str(human) + "-" + str(firstNr) + "." + str(secondNr))
     plt.draw()
 
-def updateData(pose_3d, sync = False):
-    if sync:
-        __updateData(pose_3d)
-    else:
-        pose3d_copy = pose_3d.copy()
-        t = threading.Thread(target=__updateData, args=[pose3d_copy])
-        t.start()
 
+def updateData(pose_3d, sync=False):
+    with LOCK:
+        if sync:
+            __updateData(pose_3d)
+        else:
+            pose3d_copy = pose_3d.copy()
+            t = threading.Thread(target=__updateData, args=[pose3d_copy])
+            t.start()
