@@ -1,3 +1,5 @@
+import threading
+
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
@@ -12,6 +14,7 @@ axis = None
 
 # Creates an chart
 def createChart():
+    print("Initlialising plot")
     global fig, axis
 
     mpl.rcParams['legend.fontsize'] = 10
@@ -38,7 +41,7 @@ def rotate_poses(poses_3d, R, t):
 
 
 # Updates data in the chart
-def updateData(pose_3d):
+def __updateData(pose_3d):
     global axis
 
     axis.clear()  # Clear all data
@@ -66,4 +69,12 @@ def updateData(pose_3d):
             z = [first[2], second[2]]
             axis.plot(x, y, z, label=str(human) + "-" + str(firstNr) + "." + str(secondNr))
     plt.draw()
-    print(pose_3d)
+
+def updateData(pose_3d, sync = False):
+    if sync:
+        __updateData(pose_3d)
+    else:
+        pose3d_copy = pose_3d.copy()
+        t = threading.Thread(target=__updateData, args=[pose3d_copy])
+        t.start()
+
