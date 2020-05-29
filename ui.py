@@ -82,21 +82,13 @@ def getModels():
     return MODELS
 
 
-def calculateEverything():
-    global video_iter
+def calculateEverything(webcam_image):
 
     time_all = time.perf_counter()
     # Get image data
     time_part = time.perf_counter()
 
-    if is_using_video_file:
-        try:
-            webcam_image = next(video_iter)
-        except StopIteration as e:
-            video_iter = iter(video_reader)
-            webcam_image = next(video_iter)
-    else:
-        _, webcam_image = cam.read()
+
 
     webcam_image = cv2.flip(webcam_image, 1)  # Mirror
     drawCalcTime(webcam_image, time_part, "WEBCAM", 1)
@@ -154,7 +146,16 @@ def calculateEverything():
     return webcam_image
 
 def buffer_frame():
-    frame_buffer.append(executor.submit(calculateEverything))
+    global video_iter
+    if is_using_video_file:
+        try:
+            webcam_image = next(video_iter)
+        except StopIteration as e:
+            video_iter = iter(video_reader)
+            webcam_image = next(video_iter)
+    else:
+        _, webcam_image = cam.read()
+    frame_buffer.append(executor.submit(calculateEverything,(webcam_image)))
 
 def createUI():
     global MODEL_COUNT
