@@ -84,7 +84,7 @@ def getModels():
     return MODELS
 
 
-def calculateEverything(webcam_image):
+def calculateEverything(webcam_image, height, fx):
     time_all = time.perf_counter()
     # Get image data
     time_part = time.perf_counter()
@@ -93,14 +93,6 @@ def calculateEverything(webcam_image):
     drawCalcTime(webcam_image, time_part, "WEBCAM", 1)
     time_part = time.perf_counter()
 
-    # Read variables
-    height = cv2.getTrackbarPos('Height', WINDOW_TITLE)
-    if height < 16:
-        height = 16
-        cv2.setTrackbarPos('Height', WINDOW_TITLE, 16)
-    fx = cv2.getTrackbarPos('FX', WINDOW_TITLE)
-    if fx == 0:
-        fx = -1
 
     # Prepare Image
     image, input_scale, fx = dataloader.prepareImage(webcam_image, height, fx)
@@ -145,7 +137,7 @@ def calculateEverything(webcam_image):
     return webcam_image
 
 
-def buffer_frame():
+def buffer_frame(height, fx):
     global video_iter, lastimage, paused
     if paused:
         webcam_image=lastimage
@@ -160,7 +152,7 @@ def buffer_frame():
             _, webcam_image = cam.read()
 
     lastimage = webcam_image.copy()
-    frame_buffer.append(executor.submit(calculateEverything, webcam_image))
+    frame_buffer.append(executor.submit(calculateEverything, webcam_image,height,fx))
 
 
 def createUI():
@@ -199,12 +191,21 @@ def createUI():
         cam = cv2.VideoCapture(0)  # Opens the default camera
 
     print("Running")
-    buffer_frame()
+    buffer_frame(256,-1)
 
     time_all = time.perf_counter()
     while True:
+
+        # Read variables
+        height = cv2.getTrackbarPos('Height', WINDOW_TITLE)
+        if height < 16:
+         height = 16
+         cv2.setTrackbarPos('Height', WINDOW_TITLE, 16)
+        fx = cv2.getTrackbarPos('FX', WINDOW_TITLE)
+        if fx == 0:
+            fx = -1
         # Submit new frame
-        buffer_frame()
+        buffer_frame(height,fx)
 
         # Get oldest frame and remove from buffer
         image = frame_buffer[0].result()
@@ -228,7 +229,7 @@ def createUI():
         if frame_buffer_new_size > frame_buffer_size:
             print("Set Frame buffer to " + str(frame_buffer_new_size))
             for x in range(0, frame_buffer_new_size - frame_buffer_size):
-                buffer_frame()
+                buffer_frame(height, fx)
 
         # Removing the frames from list. TODO: Wait for the buffer to finish?
         if frame_buffer_new_size < frame_buffer_size:
