@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from modules.inference_engine_pytorch import InferenceEnginePyTorch
+from modules.inference_engine_trt import InferenceEngineTRT
 from modules.parse_poses import parse_poses
 
 net = None
@@ -21,11 +22,10 @@ def loadModel(model):
         print("CUDA is available")
 
     if model.endswith("_opt.pth"):
-        from torch2trt import TRTModule
         print("Loading optimized RTR model")
-        net = TRTModule()
-        net.load_state_dict(torch.load(model))
-    net = InferenceEnginePyTorch(model, "GPU" if cuda_active else "CPU")
+        net = InferenceEngineTRT(model, "GPU" if cuda_active else "CPU")
+    else:
+        net = InferenceEnginePyTorch(model, "GPU" if cuda_active else "CPU")
 
 
 def prepareImage(webcam_image, height, fx):
